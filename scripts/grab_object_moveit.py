@@ -33,8 +33,8 @@ import pydmps.dmp_discrete
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 data_path = os.path.join(dir_path, "test1.txt")
-dir_path = os.path.dirname(os.path.realpath(__file__))
-data_path = os.path.join(dir_path, "test1.txt")
+#dir_path = os.path.dirname(os.path.realpath(__file__))
+#data_path = os.path.join(dir_path, "test1.txt")
 train_len = 100
 tau = 100.0/train_len # set tau to 1 will give you 100 points
 limb_name = "left"
@@ -78,7 +78,7 @@ def get_base_camera_pose(flag):
 
 def main():
     global data_path, train_len, tau, limb_name
-
+    
     moveit_commander.roscpp_initialize(sys.argv)
 
     rospy.init_node('grab_object_moveit')
@@ -95,7 +95,7 @@ def main():
 
     marker_pub = rospy.Publisher("/visualization_marker", Marker, queue_size=100)
 
-
+    ############## get data from DMP
     # limb = baxter_interface.Limb(limb_name)
     train_set = pd.read_csv(data_path)  # using pandas read data
     resample_t = np.linspace(train_set.values[0, 0], train_set.values[-1, 0], train_len)  # resampling the time
@@ -139,7 +139,7 @@ def main():
         dmp.goal[i] = ending_point[i]  # set the ending goal
 
     y_track, dy_track, ddy_track = dmp.rollout(tau=tau)
-
+    ############## get data from DMP
 #    rospy.loginfo("move_to_start_pose... ")
 #    move_to_start_pose(start_pose = y_track[0],limb_name = limb_name)
 #    rospy.loginfo("Done... ")
@@ -163,7 +163,7 @@ def main():
         util.send_traj_point_marker(marker_pub=marker_pub, pose=traj_pose, id=idx, rgba_tuple=rgba_tuple)
         rospy.loginfo("add one pose")
         list_of_poses.append(copy.deepcopy(traj_pose))
-    
+#    ipdb.set_trace()
     rospy.loginfo("============ Generating plan")
     group.set_max_acceleration_scaling_factor(0.01)
     group.set_max_velocity_scaling_factor(0.01)
@@ -183,12 +183,15 @@ def main():
     rospy.sleep(10)
 #    ipdb.set_trace()
 
-    rospy.loginfo("============ Enter \"ok\" to execute plan")
+    rospy.loginfo("============ Enter \"ok\" to execute plan, \"no\" to cancel execute plan ")
     s = raw_input()
     if s == 'ok':
         rospy.loginfo("============ Gonna execute plan")
-    group.execute(plan)
-    rospy.loginfo("============ Done")
+        group.execute(plan)
+        rospy.loginfo("============ Done")
+    if s == 'no':
+        rospy.loginfo("============ already cancel")
+    
 #    rospy.spin()
 
 
