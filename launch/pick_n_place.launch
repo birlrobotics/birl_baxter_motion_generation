@@ -1,0 +1,16 @@
+<launch>
+  <!-- Remap /robot/joint_states to /joint_states -->
+  <node name="remap_jointstates" pkg="birl_motion_library" type="joint_states_topic_rewriter.py"  output="screen"/>
+  
+  <!-- Enable robot -->
+  <node name="enable_robot" pkg="baxter_tools" type="enable_robot.py" args="-e"  output="screen"/>
+
+  <!-- bringup baxter joint interface -->
+  <node name="joint_trajectory_action_server" pkg="baxter_interface" type="joint_trajectory_action_server.py"  />
+  
+  <!-- move to baxter home position -->
+  <node name="example_goHome" pkg="birl_recorded_motions" type="example_goHome.py" />
+
+
+
+</launch>

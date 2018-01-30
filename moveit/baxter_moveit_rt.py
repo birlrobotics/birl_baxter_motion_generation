@@ -31,11 +31,11 @@ from birl_baxter_motion_generation.train_demontration_for_w import get_parameter
 from birl_baxter_motion_generation.add_models import Addmodels
 
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
-DATA_PATH = DIR_PATH + "/baxter_motion_sets/move_cart.txt"
+DATA_PATH = DIR_PATH + "/baxter_motion_sets/baxter_object_place_rt1.txt"
 TRAIN_LEN = 50
 TAU = 100.0/TRAIN_LEN # set tau to 1 will give you 100 points
-LIMB_NAME = "left"
-GROUP_NAME_ARM = 'left_arm'
+LIMB_NAME = "right"
+GROUP_NAME_ARM = 'right_arm'
 N_Demo=7   # number of DOFs
 N_BFS=500  #number of basis function
 CAMERA_FLAGE = True
@@ -63,15 +63,17 @@ class MoveItP_n_P:
         robot = moveit_commander.RobotCommander()
         scene = moveit_commander.PlanningSceneInterface()
         group = moveit_commander.MoveGroupCommander(GROUP_NAME_ARM)
+
         
         # publish a string of traj for visuallizing
         marker_pub = rospy.Publisher("/visualization_marker", Marker, queue_size=100)
      
         dmp_weight,demo_start_pose,demo_end_pose = get_parameter_w(limb_name=LIMB_NAME,data_path=DATA_PATH,train_len=TRAIN_LEN)
         reference_frame = REFERENCE_FRAME
-        print "add models"        
-        #Addmodels(scene,reference_frame)
-#        ipdb.set_trace()   
+        end_effector_link = group.get_end_effector_link()
+        print("end_effector_link")
+        print(end_effector_link)
+         
         print "============ Moving to the beginning of traj"
         traj_start = geometry_msgs.msg.Pose()    
         traj_start.position.x = demo_start_pose[0]
@@ -84,16 +86,21 @@ class MoveItP_n_P:
         
         group.set_start_state_to_current_state()
         group.set_pose_target(demo_start_pose)
-        ipdb.set_trace()
+        
         #ask RVIZ to visualize a plan
         plan_to_start = group.plan()
         print "============ Waiting while RVIZ displays plan_to_start..."
-        rospy.sleep(2)  
-        group.go(wait=True)
-        group.clear_pose_targets()
+        rospy.sleep(5)  
+        group.execute(plan_to_start)
+
         
-        end_effector_link = group.get_end_effector_link()
-        print("end_effector_link",end_effector_link)
+        #print "add models"
+        
+        #add_model = Addmodels(scene,reference_frame,end_effector_link)
+        #add_model.out_obstacles()  
+        #ipdb.set_trace() 
+        #add_model.attach_objects()
+        
         group.set_goal_position_tolerance(0.01)
         group.set_goal_orientation_tolerance(0.05)
         group.allow_replanning(True)
@@ -112,7 +119,7 @@ class MoveItP_n_P:
         rospy.loginfo("get dmp generalization traj")
         
         list_of_poses = []
-        ipdb.set_trace()
+        #ipdb.set_trace()
         for idx in range(TRAIN_LEN):
             traj_pose = Pose()
             traj_pose.position.x = dmp_traj[idx, 0]
@@ -134,18 +141,24 @@ class MoveItP_n_P:
             list_of_poses,  # waypoints to follow
             0.01,  # eef_step
             0.0)  # jump_threshold
+#        ipdb.set_trace()1
         print "============ Waiting while RVIZ displays dmp plans.."    
         group.plan()
-        rospy.sleep(2)
-        rospy.loginfo("============ Enter \"ok\" to execute plan, \"no\" to cancel execute plan ")
-        s = raw_input()
-        if s == 'ok':
-            rospy.loginfo("============ Gonna execute plan")
-            group.execute(plan)
-            rospy.loginfo("============ Done")
-        if s == 'no':
-            rospy.loginfo("============ already cancel")
-                # Exit MoveIt cleanly
+        
+        rospy.sleep(5)
+        group.execute(plan)
+#        rospy.loginfo("============ Enter \"ok\" to execute plan, \"no\" to cancel execute plan ")
+#        ipdb.set_trace()
+#        s = raw_input()
+#        if s == 'ok':
+#            rospy.loginfo("============ Gonna execute plan")
+#            group.go(plan)
+#            rospy.loginfo("============ Done")
+#        if s == 'no':
+#            rospy.loginfo("============ already cancel")
+#                # Exit MoveIt cleanly
+#        scene.remove_attached_object(end_effector_link, 'tool'  )
+#        scene.remove_world_object()
         moveit_commander.roscpp_shutdown()
         
         # Exit the script        
